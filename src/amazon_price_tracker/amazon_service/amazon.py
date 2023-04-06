@@ -1,3 +1,4 @@
+"""Scrapes the amazon website for the best prices of provided items"""
 
 class AmazonAPI:
     """Defines the data schema and mechanism for scarping required data on amazon"""
@@ -6,31 +7,39 @@ class AmazonAPI:
         self,
         driver,
         base_url: str,
+        search_keyword: str,
         currency: str,
+        price_filters: dict = None,
     ) -> None:
         self.driver = driver
         self.base_url = base_url
+        self.search_keyword = search_keyword
+        self.price_filters = price_filters
         self.currency = currency
 
-    def navigate_to_amazon_page(self) -> None:
+    def _navigate_to_amazon_page(self) -> None:
         """Navigates the the amazon website"""
 
         self.driver.get(self.base_url)
 
-    def search_for_product(self, search_keyword: str) -> None:
+    def _search_for_product(self) -> None:
         """Search for the product(s) with search keyword"""
 
         searchbox = self.driver.find_element("id", "twotabsearchtextbox")
-        searchbox.send_keys(search_keyword)
+        searchbox.send_keys(self.search_keyword)
         searchbox.submit()
 
-    def set_price_fiter(self, min_price, max_price) -> None:
+    def _set_price_filter(self) -> None:
         """Sets the price filter"""
 
-        price_filter = f"&rh=p_36%3A{min_price}00-{max_price}00"
-        self.driver.get(f"{self.driver.current_url}{price_filter}")
+        if self.price_filters:
+            min_price = self.price_filters["min_price"]
+            max_price = self.price_filters["max_price"]
 
-    def get_products_urls(self) -> list:
+            price_filter = f"&rh=p_36%3A{min_price}00-{max_price}00"
+            self.driver.get(f"{self.driver.current_url}{price_filter}")
+
+    def _get_products_urls(self) -> list:
         """Returns the url(s) for the product(s) searched for"""
 
         search_result_list = self.driver.find_elements("class name", "s-result-list")
@@ -42,6 +51,10 @@ class AmazonAPI:
         )
 
         product_urls = [url.get_attribute("href") for url in search_results]
+
+        if not product_urls:
+            raise Exception ("Product serached for unavailable")
+        
         return product_urls
 
     @staticmethod
@@ -133,3 +146,15 @@ class AmazonAPI:
 
         old_value, new_value, occurence = product_price.partition('.')
         return old_value + new_value + occurence.replace('.', '')
+
+    def execute(self):
+        """Initiates the scraping process"""
+
+        self._navigate_to_amazon_page()
+        self._search_for_product()
+        self._set_price_filter()
+
+        product_urls = self._get_products_urls()
+        products_info = self.get_all_products_info(product_urls)
+
+        return products_info

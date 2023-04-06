@@ -4,37 +4,31 @@ from amazon_service.amazon import AmazonAPI
 from drivers.chrome_webdriver import ChromeWebDriver
 from selenium.common.exceptions import NoSuchElementException
 
-def run():
-
-    pass
-
-
-def test_driver_creation():
+def run_scraper():
+    """Entry point to the application"""
 
     webdriver = ChromeWebDriver()
     driver_options = webdriver.set_web_driver_options("--start-maximized", "--headless")
-    return webdriver.create_web_driver(driver_options)
-    
+    driver = webdriver.create_web_driver(driver_options)
+    price_filter = {
+        "min_price": "200",
+        "max_price": "500"
+    }
+    amazon_api = AmazonAPI(driver, "http://www.amazon.co.uk/", "PS5", "")
 
-def test_amazon_api(driver):
-    
-    amazonAPI = AmazonAPI(driver, "http://www.amazon.co.uk/", "")
-    amazonAPI.navigate_to_amazon_page()
-    amazonAPI.search_for_product("PS5")
-    amazonAPI.set_price_fiter("200", "500")
-    product_urls = amazonAPI.get_products_urls()
-    products_info = amazonAPI.get_all_products_info(product_urls)
-    print(products_info)
+    try:
+        with driver:
+            scraper_result = amazon_api.execute()
+            return scraper_result
+    except (NoSuchElementException, RuntimeError) as error_message:
+        print(f"error_log: {error_message}")      
 
 
 if __name__ == "__main__":
     start = time.time()
 
-    try:
-        with test_driver_creation() as driver:
-            test_amazon_api(driver)
-    except (NoSuchElementException, RuntimeError) as error_message:
-        print(f"error_log: {error_message}")
+    results = run_scraper()
+    print(results)
 
     end = time.time()
     print(end - start)
