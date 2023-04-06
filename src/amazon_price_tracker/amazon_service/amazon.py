@@ -1,6 +1,3 @@
-# from concurrent.futures import ThreadPoolExecutor
-# from operator import methodcaller
-
 
 class AmazonAPI:
     """Defines the data schema and mechanism for scarping required data on amazon"""
@@ -73,7 +70,7 @@ class AmazonAPI:
         product_seller = self._get_product_seller()
         product_price = self._get_product_price()
 
-        if product_title and product_seller:
+        if product_title and product_seller and product_price:
             product_info = {
                 "asin": asin,
                 "url": product_short_url,
@@ -125,10 +122,14 @@ class AmazonAPI:
 
         try:
             product_price = f'{self.driver.find_element("class name", "a-price-whole").text}.{self.driver.find_element("class name", "a-price-fraction").text}'
-        except Exception:
+        except Exception as error_message:
+            print(f"error_log: {error_message}")
             product_price = "Price unavailable"
 
-        # if not product_price:
-        #     raise Exception("Unable to get price of product")
+        return self._clean_up_product_price_value(product_price)
+    
+    def _clean_up_product_price_value(self, product_price):
+        """Cleans up the value of the product prices returned"""
 
-        return product_price
+        old_value, new_value, occurence = product_price.partition('.')
+        return old_value + new_value + occurence.replace('.', '')

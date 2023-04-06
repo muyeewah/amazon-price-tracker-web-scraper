@@ -1,11 +1,8 @@
-# import concurrent.futures
 import time
 
 from amazon_service.amazon import AmazonAPI
 from drivers.chrome_webdriver import ChromeWebDriver
 from selenium.common.exceptions import NoSuchElementException
-
-# from selenium.webdriver.common.by import By
 
 def run():
 
@@ -37,7 +34,7 @@ if __name__ == "__main__":
         with test_driver_creation() as driver:
             test_amazon_api(driver)
     except (NoSuchElementException, RuntimeError) as error_message:
-        print(f"error: {error_message}")
+        print(f"error_log: {error_message}")
 
     end = time.time()
     print(end - start)
