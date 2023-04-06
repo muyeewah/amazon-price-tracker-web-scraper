@@ -1,5 +1,6 @@
 """Scrapes the amazon website for the best prices of provided items"""
 
+
 class AmazonAPI:
     """Defines the data schema and mechanism for scarping required data on amazon"""
 
@@ -8,14 +9,12 @@ class AmazonAPI:
         driver,
         base_url: str,
         search_keyword: str,
-        currency: str,
         price_filters: dict = None,
     ) -> None:
         self.driver = driver
         self.base_url = base_url
         self.search_keyword = search_keyword
         self.price_filters = price_filters
-        self.currency = currency
 
     def _navigate_to_amazon_page(self) -> None:
         """Navigates the the amazon website"""
@@ -53,8 +52,8 @@ class AmazonAPI:
         product_urls = [url.get_attribute("href") for url in search_results]
 
         if not product_urls:
-            raise Exception ("Product serached for unavailable")
-        
+            raise Exception("Product serached for unavailable")
+
         return product_urls
 
     @staticmethod
@@ -82,6 +81,7 @@ class AmazonAPI:
         product_title = self._get_product_title()
         product_seller = self._get_product_seller()
         product_price = self._get_product_price()
+        currency = self._get_currency()
 
         if product_title and product_seller and product_price:
             product_info = {
@@ -90,6 +90,7 @@ class AmazonAPI:
                 "title": product_title,
                 "seller": product_seller,
                 "price": product_price,
+                "currency": currency
             }
             return product_info
 
@@ -140,13 +141,26 @@ class AmazonAPI:
             product_price = "Price unavailable"
 
         return self._clean_up_product_price_value(product_price)
-    
-    def _clean_up_product_price_value(self, product_price):
+
+    @staticmethod
+    def _clean_up_product_price_value(product_price):
         """Cleans up the value of the product prices returned"""
 
-        old_value, new_value, occurence = product_price.partition('.')
-        return old_value + new_value + occurence.replace('.', '')
+        old_value, new_value, occurence = product_price.partition(".")
+        return old_value + new_value + occurence.replace(".", "")
 
+    def _get_currency(self) -> str:
+        """Returns the currency for the prices"""
+
+        try:
+            currency = self.driver.find_element("class name", "a-price-symbol").text
+        except Exception as error_message:
+            print(f"error_log: {error_message}")
+            currency = "Currency unavailable"
+
+        return (currency)
+
+    
     def execute(self):
         """Initiates the scraping process"""
 
