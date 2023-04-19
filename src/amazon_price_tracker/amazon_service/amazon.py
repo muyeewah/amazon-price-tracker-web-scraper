@@ -78,6 +78,7 @@ class AmazonAPI:
 
         product_short_url = self._shorten_url(asin)
         self.driver.get(f"{product_short_url}")
+        photo_url = self._get_photo_url()
         product_title = self._get_product_title()
         product_seller = self._get_product_seller()
         product_price = self._get_product_price()
@@ -87,6 +88,7 @@ class AmazonAPI:
             product_info = {
                 "asin": asin,
                 "url": product_short_url,
+                "photo": photo_url,
                 "title": product_title,
                 "seller": product_seller,
                 "price": product_price,
@@ -110,6 +112,16 @@ class AmazonAPI:
 
         return products_info
 
+    def _get_photo_url(self) -> str:
+        """Returns the photo url of a product"""
+
+        # photo_url = self.driver.find_element("id", "landingImage").get_attribute('src')
+        photo_url = self.driver.find_element("class name", "a-dynamic-image").get_attribute('src')
+
+        if not photo_url:
+            raise Exception("Unable to get the photo url of product")
+        return photo_url
+    
     def _get_product_title(self) -> str:
         """Returns the title of a product"""
 
@@ -135,10 +147,13 @@ class AmazonAPI:
         """Returns the price of a product"""
 
         try:
-            product_price = f'{self.driver.find_element("class name", "a-price-whole").text}.{self.driver.find_element("class name", "a-price-fraction").text}'
-        except Exception as error_message:
-            print(f"error_log: {error_message}")
-            product_price = "Price unavailable"
+            product_price = (self.driver.find_element("id", "price_inside_buybox").text)[1:]
+        except Exception:
+            try:
+                product_price = f'{self.driver.find_element("class name", "a-price-whole").text}.{self.driver.find_element("class name", "a-price-fraction").text}'
+            except Exception  as error_message:
+                print(f"error_log: {error_message}")
+                product_price = "Price unavailable"
 
         return self._clean_up_product_price_value(product_price)
 
@@ -160,7 +175,6 @@ class AmazonAPI:
 
         return (currency)
 
-    
     def execute(self):
         """Initiates the scraping process"""
 
